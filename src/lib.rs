@@ -1,5 +1,14 @@
-pub fn add(left: usize, right: usize) -> usize {
-	left + right
+#[derive(Debug, Eq, PartialEq)]
+pub struct ReadBuffer<const SIZE: usize> {
+	buffer: [u8; SIZE],
+}
+
+impl<const SIZE: usize> ReadBuffer<SIZE> {
+	pub fn new() -> Self {
+		ReadBuffer {
+			buffer: [0u8; SIZE],
+		}
+	}
 }
 
 #[cfg(test)]
@@ -7,8 +16,15 @@ mod tests {
 	use super::*;
 	
 	#[test]
-	fn it_works() {
-		let result = add(2, 2);
-		assert_eq!(result, 4);
+	fn empty_buffer() {
+		let buffer = ReadBuffer::new();
+		assert_eq!(buffer, ReadBuffer {
+			buffer: [0u8; 16],
+		});
+		
+		let buffer: ReadBuffer<8> = ReadBuffer::new();
+		assert_eq!(buffer, ReadBuffer {
+			buffer: [0u8; 8],
+		});
 	}
 }
