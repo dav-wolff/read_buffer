@@ -38,6 +38,21 @@ fn read_partial() {
 }
 
 #[test]
+fn default_construction() {
+	let buffer: Option<ReadBuffer<16>> = None;
+	let mut buffer = buffer.unwrap_or_default();
+	let data = [4, 5, 45, 54];
+	let mut data = &data[..];
+	
+	let result = buffer.read_from(&mut data).unwrap();
+	assert_eq!(result.len(), 4);
+	assert_eq!(
+		result,
+		[4, 5, 45, 54]
+	);
+}
+
+#[test]
 #[should_panic]
 fn out_of_bounds_access() {
 	let mut buffer: ReadBuffer<128> = ReadBuffer::new();

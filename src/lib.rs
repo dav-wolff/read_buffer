@@ -18,3 +18,9 @@ impl<const SIZE: usize> ReadBuffer<SIZE> {
 		Ok(&self.buffer[..length])
 	}
 }
+
+impl<const SIZE: usize> Default for ReadBuffer<SIZE> {
+	fn default() -> Self {
+		Self::new()
+	}
+}
