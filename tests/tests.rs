@@ -6,9 +6,9 @@ use read_buffer::ReadBuffer;
 fn read() {
 	let mut buffer: ReadBuffer<256> = ReadBuffer::new();
 	let data = [1, 1, 2, 3, 5, 8, 13, 21];
-	let mut data = &data[..];
+	let mut reader = &data[..];
 	
-	let result = buffer.read_from(&mut data).unwrap();
+	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 8);
 	assert_eq!(
 		result,
@@ -20,16 +20,16 @@ fn read() {
 fn read_partial() {
 	let mut buffer: ReadBuffer<8> = ReadBuffer::new();
 	let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-	let mut data = &data[..];
+	let mut reader = &data[..];
 	
-	let result = buffer.read_from(&mut data).unwrap();
+	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 8);
 	assert_eq!(
 		result,
 		[1, 2, 3, 4, 5, 6, 7, 8]
 	);
 	
-	let result = buffer.read_from(&mut data).unwrap();
+	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 2);
 	assert_eq!(
 		result,
@@ -42,9 +42,9 @@ fn default_construction() {
 	let buffer: Option<ReadBuffer<16>> = None;
 	let mut buffer = buffer.unwrap_or_default();
 	let data = [4, 5, 45, 54];
-	let mut data = &data[..];
+	let mut reader = &data[..];
 	
-	let result = buffer.read_from(&mut data).unwrap();
+	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 4);
 	assert_eq!(
 		result,
