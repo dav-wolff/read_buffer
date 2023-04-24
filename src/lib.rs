@@ -103,7 +103,7 @@ pub struct ReadBuffer<const SIZE: usize> {
 impl<const SIZE: usize> ReadBuffer<SIZE> {
 	/// Creates a new **ReadBuffer**
 	pub fn new() -> Self {
-		ReadBuffer {
+		Self {
 			buffer: [0u8; SIZE],
 		}
 	}
@@ -140,6 +140,52 @@ impl<const SIZE: usize> ReadBuffer<SIZE> {
 	pub fn read_from(&mut self, source: &mut impl Read) -> Result<&[u8], io::Error> {
 		let length = source.read(&mut self.buffer)?;
 		Ok(&self.buffer[..length])
+	}
+	
+	/// Continually calls [Read::read] on the given [Read] as long
+	/// as predicate returns true, filling the internal buffer,
+	/// and returns a slice referencing all the data read over all
+	/// the calls made to [Read::read] or an error if any occurred.
+	/// 
+	/// This function takes a predicate that is called with each
+	/// chunk of data read from [Read::read] and that decides
+	/// whether to keep reading.
+	/// 
+	/// The predicate is **not** called with an empty slice if
+	/// the call to [Read::read] returns a length of 0.
+	/// 
+	/// This function keeps calling [Read::read] on the given [Read]
+	/// until one of the following occurs:
+	/// 
+	/// 1. The predicate returns `false`.
+	/// 1. The internal buffer is full.
+	/// 1. The call to [Read::read] returns a length of 0 indicating "end of file".
+	/// 1. The call to [Read::read] returns an error.
+	/// 
+	/// # Errors
+	/// 
+	/// Errors from [Read::read] are passed on to the caller.
+	/// Besides those, this method does not return any errors.
+	pub fn read_while(&mut self, source: &mut impl Read, mut predicate: impl FnMut(&[u8]) -> bool) -> Result<&[u8], io::Error> {
+		let mut remaining = &mut self.buffer[..];
+		
+		loop {
+			let length = source.read(remaining)?;
+			
+			if length == 0 {
+				break;
+			}
+			
+			let chunk: &mut [u8];
+			(chunk, remaining) = remaining.split_at_mut(length);
+			
+			if !predicate(chunk) || remaining.is_empty() {
+				break;
+			}
+		}
+		
+		let read_bytes = SIZE - remaining.len();
+		Ok(&self.buffer[..read_bytes])
 	}
 }
 

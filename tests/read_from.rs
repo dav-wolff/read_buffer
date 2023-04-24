@@ -1,6 +1,8 @@
-use std::io;
-use std::io::{ErrorKind, Read};
+pub mod utils;
+
+use std::io::{ErrorKind};
 use read_buffer::ReadBuffer;
+use crate::utils::ErrorReader;
 
 #[test]
 fn read() {
@@ -57,9 +59,9 @@ fn default_construction() {
 fn out_of_bounds_access() {
 	let mut buffer: ReadBuffer<128> = ReadBuffer::new();
 	let data = [1, 2, 3, 4];
-	let mut data = &data[..];
+	let mut reader = &data[..];
 	
-	let Ok(result) = buffer.read_from(&mut data) else {
+	let Ok(result) = buffer.read_from(&mut reader) else {
 		return; // don't panic so test will fail
 	};
 	result[4];
@@ -70,27 +72,19 @@ fn out_of_bounds_access() {
 fn out_of_bounds_with_empty_data() {
 	let mut buffer: ReadBuffer<128> = ReadBuffer::new();
 	let data = [0; 0];
-	let mut data = &data[..];
+	let mut reader = &data[..];
 	
-	let Ok(result) = buffer.read_from(&mut data) else {
+	let Ok(result) = buffer.read_from(&mut reader) else {
 		return; // don't panic so test will fail
 	};
 	result[0];
 }
 
-struct ErrorReader;
-
-impl Read for ErrorReader {
-	fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
-		Err(ErrorKind::NotFound.into())
-	}
-}
-
 #[test]
 fn error_result() {
 	let mut buffer: ReadBuffer<64> = ReadBuffer::new();
-	let mut data = ErrorReader;
+	let mut reader = ErrorReader;
 	
-	let error = buffer.read_from(&mut data).err().unwrap();
+	let error = buffer.read_from(&mut reader).err().unwrap();
 	assert_eq!(error.kind(), ErrorKind::NotFound);
 }

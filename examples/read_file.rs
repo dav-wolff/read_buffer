@@ -1,5 +1,4 @@
-use std::io;
-use std::str;
+use std::{io, str};
 use std::fs::File;
 use std::path::PathBuf;
 use read_buffer::ReadBuffer;
@@ -22,7 +21,7 @@ fn main() -> Result<(), io::Error> {
 		// Read up to 8 bytes from the file
 		let read_data = buffer.read_from(&mut file)?;
 		
-		// A length of 0 indicates 'end of file'
+		// A length of 0 indicates "end of file"
 		if read_data.len() == 0 {
 			println!("Reached end of file");
 			return Ok(());
