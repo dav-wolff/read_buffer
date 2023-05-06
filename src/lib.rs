@@ -137,6 +137,7 @@ impl<const SIZE: usize> ReadBuffer<SIZE> {
 	/// assert_eq!(read_data, [1, 2, 3, 4]);
 	/// # Ok(())
 	/// # }
+	/// ```
 	pub fn read_from(&mut self, source: &mut impl Read) -> Result<&[u8], io::Error> {
 		let length = source.read(&mut self.buffer)?;
 		Ok(&self.buffer[..length])
@@ -186,6 +187,38 @@ impl<const SIZE: usize> ReadBuffer<SIZE> {
 		
 		let read_bytes = SIZE - remaining.len();
 		Ok(&self.buffer[..read_bytes])
+	}
+	
+	/// Returns the capacity of the internal buffer
+	/// which was set using the const generic.
+	/// 
+	/// This can be useful when checking whether a call to [Read::read]
+	/// filled the buffer completely or stopped reading early.  
+	/// Using `capacity` in this case avoids having to repeat the capacity
+	/// and possibly forgetting to update it later on.
+	/// 
+	/// # Examples
+	/// 
+	/// ```
+	/// # fn main() -> Result<(), std::io::Error> {
+	/// use read_buffer::ReadBuffer;
+	/// 
+	/// let data = [1, 2, 3, 4, 5, 6, 7];
+	/// let mut reader = &data[..]; // Read is implemented for &[u8]
+	/// let mut buffer: ReadBuffer<4> = ReadBuffer::new();
+	/// 
+	/// let read_data = buffer.read_from(&mut reader)?;
+	/// 
+	/// assert_eq!(read_data.len(), buffer.capacity());
+	///
+	/// let read_data = buffer.read_from(&mut reader)?;
+	/// 
+	/// assert_ne!(read_data.len(), buffer.capacity());
+	/// # Ok(())
+	/// # }
+	/// ```
+	pub const fn capacity(&self) -> usize {
+		SIZE
 	}
 }
 
