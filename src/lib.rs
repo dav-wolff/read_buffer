@@ -1,4 +1,5 @@
-//! This crate provides [ReadBuffer], a wrapper to safely read into a buffer from a [`Read`].
+//! This crate provides [ReadBuffer] and [DynReadBuffer],
+//! two wrappers to safely read into a buffer from a [`Read`].
 //! 
 //! # Motivation
 //! 
@@ -42,8 +43,9 @@
 //! assert_eq!(buffer[..4], [1, 2, 3, 8]);
 //! ```
 //! 
-//! [ReadBuffer] provides a wrapper that only lets you access the data that was actually read,
-//! and forces you to check the [Result] before accessing the data.
+//! [ReadBuffer] and [DynReadBuffer] provide wrappers
+//! that only let you access the data that was actually read,
+//! and force you to check the [Result] before accessing the data.
 //! 
 //! # Examples
 //! 

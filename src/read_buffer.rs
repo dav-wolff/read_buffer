@@ -3,16 +3,23 @@ use std::io::Read;
 
 /// A buffer to read into from a [Read] and safely access the read data.
 /// 
-/// **ReadBuffer** provides a buffer to read into using [ReadBuffer::read_from],
+/// **ReadBuffer** provides a statically sized buffer
+/// to read into using [`read_from`] and [`read_while`],
 /// but crucially doesn't allow **any** access to the data inside the buffer
 /// outside of the slice returned from [ReadBuffer::read_from].
+/// 
+/// If you require reading slices of dynamic size, consider using [`DynReadBuffer`].
+/// 
+/// [`read_from`]: ReadBuffer::read_from
+/// [`read_while`]: ReadBuffer::read_while
+/// [`DynReadBuffer`]: crate::DynReadBuffer
 #[derive(Debug)]
 pub struct ReadBuffer<const SIZE: usize> {
 	buffer: [u8; SIZE],
 }
 
 impl<const SIZE: usize> ReadBuffer<SIZE> {
-	/// Creates a new **ReadBuffer**
+	/// Creates a new **ReadBuffer**.
 	pub fn new() -> Self {
 		Self {
 			buffer: [0u8; SIZE],
