@@ -8,8 +8,7 @@
 //! # fn main() -> Result<(), std::io::Error> {
 //! use std::io::Read;
 //! 
-//! let data = [1, 2, 3, 4];
-//! let mut reader = &data[..]; // Read is implemented for &[u8]
+//! let mut reader = [1, 2, 3, 4].as_slice(); // Read is implemented for &[u8]
 //! let mut buffer = [0; 16];
 //! 
 //! let length = reader.read(&mut buffer)?;
@@ -22,8 +21,7 @@
 //! ```
 //! use std::io::Read;
 //! 
-//! let data = [8, 8, 8, 8];
-//! let mut reader = &data[..];
+//! let mut reader = [8, 8, 8, 8].as_slice();
 //! let mut buffer = [0; 8];
 //! 
 //! // Ignoring the result of Read::read which might fail
@@ -33,8 +31,7 @@
 //! // Reading too much data
 //! assert_eq!(buffer, [8, 8, 8, 8, 0, 0, 0, 0]);
 //! 
-//! let data = [1, 2, 3];
-//! let mut reader = &data[..];
+//! let mut reader = [1, 2, 3].as_slice();
 //! 
 //! # #[allow(unused)]
 //! reader.read(&mut buffer);
@@ -53,8 +50,7 @@
 //! # fn main() -> Result<(), std::io::Error> {
 //! use read_buffer::ReadBuffer;
 //! 
-//! let data = [8, 8, 8, 8];
-//! let mut reader = &data[..];
+//! let mut reader = [8, 8, 8, 8].as_slice();
 //! let mut buffer: ReadBuffer<8> = ReadBuffer::new();
 //! 
 //! // We are forced to check the Result of read_from to access the data we read
@@ -70,8 +66,7 @@
 //! 
 //! // We can reuse the same buffer for the next read, just as with Read::read
 //! 
-//! let data = [1, 2, 3];
-//! let mut reader = &data[..];
+//! let mut reader = [1, 2, 3].as_slice();
 //! 
 //! let read_data = buffer.read_from(&mut reader)?;
 //! 

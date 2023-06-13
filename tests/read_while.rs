@@ -1,14 +1,13 @@
 pub mod utils;
 
-use std::io::{ErrorKind};
+use std::io::ErrorKind;
 use read_buffer::ReadBuffer;
 use crate::utils::{ChunkedReader, ErrorReader};
 
 #[test]
 fn read() {
 	let mut buffer: ReadBuffer<256> = ReadBuffer::new();
-	let data = [1, 1, 2, 3, 5, 8, 13, 21];
-	let mut reader = &data[..];
+	let mut reader = [1, 1, 2, 3, 5, 8, 13, 21].as_slice();
 	
 	let result = buffer.read_while(&mut reader, |_chunk| true).unwrap();
 	assert_eq!(result.len(), 8);
@@ -21,8 +20,7 @@ fn read() {
 #[test]
 fn read_partial() {
 	let mut buffer: ReadBuffer<8> = ReadBuffer::new();
-	let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-	let mut reader = &data[..];
+	let mut reader = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].as_slice();
 	
 	let result = buffer.read_while(&mut reader, |_chunk| true).unwrap();
 	assert_eq!(result.len(), 8);

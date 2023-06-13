@@ -1,14 +1,13 @@
 pub mod utils;
 
-use std::io::{ErrorKind};
+use std::io::ErrorKind;
 use read_buffer::ReadBuffer;
 use crate::utils::ErrorReader;
 
 #[test]
 fn read() {
 	let mut buffer: ReadBuffer<256> = ReadBuffer::new();
-	let data = [1, 1, 2, 3, 5, 8, 13, 21];
-	let mut reader = &data[..];
+	let mut reader = [1, 1, 2, 3, 5, 8, 13, 21].as_slice();
 	
 	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 8);
@@ -21,8 +20,7 @@ fn read() {
 #[test]
 fn read_partial() {
 	let mut buffer: ReadBuffer<8> = ReadBuffer::new();
-	let data = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-	let mut reader = &data[..];
+	let mut reader = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].as_slice();
 	
 	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 8);
@@ -43,8 +41,7 @@ fn read_partial() {
 fn default_construction() {
 	let buffer: Option<ReadBuffer<16>> = None;
 	let mut buffer = buffer.unwrap_or_default();
-	let data = [4, 5, 45, 54];
-	let mut reader = &data[..];
+	let mut reader = [4, 5, 45, 54].as_slice();
 	
 	let result = buffer.read_from(&mut reader).unwrap();
 	assert_eq!(result.len(), 4);
@@ -58,8 +55,7 @@ fn default_construction() {
 #[should_panic]
 fn out_of_bounds_access() {
 	let mut buffer: ReadBuffer<128> = ReadBuffer::new();
-	let data = [1, 2, 3, 4];
-	let mut reader = &data[..];
+	let mut reader = [1, 2, 3, 4].as_slice();
 	
 	let Ok(result) = buffer.read_from(&mut reader) else {
 		return; // don't panic so test will fail
@@ -71,8 +67,7 @@ fn out_of_bounds_access() {
 #[should_panic]
 fn out_of_bounds_with_empty_data() {
 	let mut buffer: ReadBuffer<128> = ReadBuffer::new();
-	let data = [0; 0];
-	let mut reader = &data[..];
+	let mut reader = [0; 0].as_slice();
 	
 	let Ok(result) = buffer.read_from(&mut reader) else {
 		return; // don't panic so test will fail

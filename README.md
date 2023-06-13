@@ -1,6 +1,7 @@
 # read_buffer
 
-This crate provides **ReadBuffer**, a wrapper to safely read into a buffer from a [Read].
+This crate provides **ReadBuffer** and **DynReadBuffer,
+two wrappers to safely read into a buffer from a [Read].
 
 ## Motivation
 
@@ -8,8 +9,7 @@ With the default way of reading into a buffer using [Read::read] like this:
 ```rust
 use std::io::Read;
 
-let data = [1, 2, 3, 4];
-let mut reader = &data[..]; // Read is implemented for &[u8]
+let mut reader = [1, 2, 3, 4].as_slice(); // Read is implemented for &[u8]
 let mut buffer = [0; 16];
 
 let length = reader.read(&mut buffer)?;
@@ -20,37 +20,33 @@ or even outright ignoring the [Result] of [Read::read]:
 ```rust
 use std::io::Read;
 
-let data = [8, 8, 8, 8];
-let mut reader = &data[..];
+let mut reader = [8, 8, 8, 8].as_slice();
 let mut buffer = [0; 8];
 
 // Ignoring the result of Read::read which might fail
-# #[allow(unused)]
 reader.read(&mut buffer);
 
 // Reading too much data
 assert_eq!(buffer, [8, 8, 8, 8, 0, 0, 0, 0]);
 
-let data = [1, 2, 3];
-let mut reader = &data[..];
+let mut reader = [1, 2, 3].as_slice();
 
-# #[allow(unused)]
 reader.read(&mut buffer);
 
 // Reading garbage data from previous call to Read::read
 assert_eq!(buffer[..4], [1, 2, 3, 8]);
 ```
 
-**ReadBuffer** provides a wrapper that only lets you access the data that was actually read,
-and forces you to check the [Result] before accessing the data.
+**ReadBuffer** and **DynReadBuffer provide wrappers
+that only lets you access the data that was actually read,
+and force you to check the [Result] before accessing the data.
 
 ## Examples
 
 ```rust
 use read_buffer::ReadBuffer;
 
-let data = [8, 8, 8, 8];
-let mut reader = &data[..];
+let mut reader = [8, 8, 8, 8].as_slice();
 let mut buffer: ReadBuffer<8> = ReadBuffer::new();
 
 // We are forced to check the Result of read_from to access the data we read
@@ -66,8 +62,7 @@ assert_eq!(read_data, [8, 8, 8, 8]);
 
 // We can reuse the same buffer for the next read, just as with Read::read
 
-let data = [1, 2, 3];
-let mut reader = &data[..];
+let mut reader = [1, 2, 3].as_slice();
 
 let read_data = buffer.read_from(&mut reader)?;
 

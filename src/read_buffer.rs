@@ -46,8 +46,7 @@ impl<const SIZE: usize> ReadBuffer<SIZE> {
 	/// # fn main() -> Result<(), std::io::Error> {
 	/// use read_buffer::ReadBuffer;
 	/// 
-	/// let data = [1, 2, 3, 4];
-	/// let mut reader = &data[..]; // Read is implemented for &[u8]
+	/// let mut reader = [1, 2, 3, 4].as_slice(); // Read is implemented for &[u8]
 	/// let mut buffer: ReadBuffer<256> = ReadBuffer::new();
 	/// 
 	/// let read_data = buffer.read_from(&mut reader)?;
@@ -121,8 +120,7 @@ impl<const SIZE: usize> ReadBuffer<SIZE> {
 	/// # fn main() -> Result<(), std::io::Error> {
 	/// use read_buffer::ReadBuffer;
 	/// 
-	/// let data = [1, 2, 3, 4, 5, 6, 7];
-	/// let mut reader = &data[..]; // Read is implemented for &[u8]
+	/// let mut reader = [1, 2, 3, 4, 5, 6, 7].as_slice(); // Read is implemented for &[u8]
 	/// let mut buffer: ReadBuffer<4> = ReadBuffer::new();
 	/// 
 	/// let read_data = buffer.read_from(&mut reader)?;
