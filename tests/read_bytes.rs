@@ -88,7 +88,7 @@ fn with_capacity() {
 		[1]
 	);
 	
-	let original_address = &result[0] as *const u8;
+	let original_address = &result[0] as *const u8 as usize;
 	
 	let mut reader = [5; 2048].as_slice();
 	let result = buffer.read_bytes(&mut reader, 2048).unwrap();
@@ -97,9 +97,9 @@ fn with_capacity() {
 		[5; 2048]
 	);
 	
-	let new_address = &result[0] as *const u8;
+	let new_address = &result[0] as *const u8 as usize;
 	
-	assert!(std::ptr::eq(original_address, new_address));
+	assert!(original_address <= new_address && new_address < original_address + 2048);
 }
 
 #[test]

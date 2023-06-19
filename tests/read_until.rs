@@ -173,3 +173,65 @@ fn continues_after_interrupt() {
 		[14, 15, 1, 12, 15, 0]
 	);
 }
+
+#[test]
+fn read_bytes_after_delimiter() {
+	let mut buffer = DynReadBuffer::new();
+	let mut reader = [1, 2, 3, 4, 0, 5, 6, 7, 8].as_slice();
+	
+	let result = buffer.read_until(&mut reader, 0).unwrap();
+	assert_eq!(
+		result,
+		[1, 2, 3, 4, 0]
+	);
+	
+	let result = buffer.read_bytes(&mut reader, 4).unwrap();
+	assert_eq!(
+		result,
+		[5, 6, 7, 8]
+	);
+}
+
+#[test]
+fn read_byte_twice_after_delimiter() {
+	let mut buffer = DynReadBuffer::new();
+	let mut reader = [1, 2, 3, 4, 0, 5, 6, 7, 8].as_slice();
+	
+	let result = buffer.read_until(&mut reader, 0).unwrap();
+	assert_eq!(
+		result,
+		[1, 2, 3, 4, 0]
+	);
+	
+	let result = buffer.read_bytes(&mut reader, 2).unwrap();
+	assert_eq!(
+		result,
+		[5, 6]
+	);
+	
+	let result = buffer.read_bytes(&mut reader, 2).unwrap();
+	assert_eq!(
+		result,
+		[7, 8]
+	);
+}
+
+#[test]
+fn read_chunked_bytes_after_delimiter() {
+	let mut buffer = DynReadBuffer::new();
+	let mut reader = ChunkedReader::new();
+	reader.add_chunk(vec![1, 2, 3, 0, 4, 5]);
+	reader.add_chunk(vec![6, 7, 8, 9, 10]);
+	
+	let result = buffer.read_until(&mut reader, 0).unwrap();
+	assert_eq!(
+		result,
+		[1, 2, 3, 0]
+	);
+	
+	let result = buffer.read_bytes(&mut reader, 7).unwrap();
+	assert_eq!(
+		result,
+		[4, 5, 6, 7, 8, 9, 10]
+	);
+}

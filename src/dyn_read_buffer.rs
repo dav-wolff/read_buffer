@@ -31,8 +31,14 @@ impl DynReadBuffer {
 	
 	/// Creates a new **DynReadBuffer** with an internal buffer of at least the specified capacity.
 	pub fn with_capacity(capacity: usize) -> Self {
+		let mut buffer = Vec::with_capacity(capacity);
+		buffer.extend(
+			iter::repeat(0)
+				.take(capacity)
+		);
+		
 		Self {
-			buffer: Vec::with_capacity(capacity),
+			buffer,
 			filled_buffer_start: 0,
 			filled_buffer_length: 0,
 		}
@@ -73,17 +79,26 @@ impl DynReadBuffer {
 	/// [`UnexpectedEof`]: std::io::ErrorKind::UnexpectedEof
 	/// [`Interrupted`]: std::io::ErrorKind::Interrupted
 	pub fn read_bytes(&mut self, mut reader: impl Read, amount: usize) -> Result<&[u8], io::Error> {
-		if self.buffer.len() < amount {
-			self.buffer.extend(
-				iter::repeat(0)
-					.take(amount - self.buffer.len())
-			);
+		if amount > self.filled_buffer_length {
+			let amount_to_fill = amount - self.filled_buffer_length;
+			self.reserve(amount_to_fill);
+			
+			let start = self.filled_buffer_end();
+			let end = start + amount_to_fill;
+			let buffer_to_fill = &mut self.buffer[start..end];
+			reader.read_exact(buffer_to_fill)?;
+			
+			self.filled_buffer_length += amount_to_fill;
 		}
 		
-		let buffer = &mut self.buffer[..amount];
-		reader.read_exact(buffer)?;
+		let start = self.filled_buffer_start;
+		let end = start + amount;
+		let result = &self.buffer[start..end];
 		
-		Ok(buffer)
+		self.filled_buffer_start += amount;
+		self.filled_buffer_length -= amount;
+		
+		Ok(result)
 	}
 	
 	/// Reads from the given [Read] until the specified delimiter is encountered
@@ -115,6 +130,7 @@ impl DynReadBuffer {
 	/// let read_data = buffer.read_until(&mut reader, 0)?;
 	/// 
 	/// assert_eq!(read_data, [1, 2, 3, 0]);
+	/// assert_eq!(buffer.read_bytes(&mut reader, 1)?, [4]);
 	/// # Ok(())
 	/// # }
 	/// ```
