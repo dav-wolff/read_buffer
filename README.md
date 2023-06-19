@@ -1,6 +1,6 @@
 # read_buffer
 
-This crate provides **ReadBuffer** and **DynReadBuffer,
+This crate provides **ReadBuffer** and **DynReadBuffer**,
 two wrappers to safely read into a buffer from a [Read].
 
 ## Motivation
@@ -37,8 +37,8 @@ reader.read(&mut buffer);
 assert_eq!(buffer[..4], [1, 2, 3, 8]);
 ```
 
-**ReadBuffer** and **DynReadBuffer provide wrappers
-that only lets you access the data that was actually read,
+**ReadBuffer** and **DynReadBuffer** provide wrappers
+that only let you access the data that was actually read,
 and force you to check the [Result] before accessing the data.
 
 ## Examples
