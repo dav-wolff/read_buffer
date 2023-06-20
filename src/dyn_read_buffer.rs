@@ -1,4 +1,4 @@
-use std::{iter, io::{Read, self, ErrorKind}};
+use std::io::{Read, self, ErrorKind};
 
 /// A dynamically sized buffer to read into from a [Read] and safely access the read data.
 /// 
@@ -34,14 +34,8 @@ impl<R: Read> DynReadBuffer<R> {
 	/// Creates a new **DynReadBuffer** to read from the given [Read]
 	/// with an internal buffer of at least the specified capacity.
 	pub fn with_capacity(reader: R, capacity: usize) -> Self {
-		let mut buffer = Vec::with_capacity(capacity);
-		buffer.extend(
-			iter::repeat(0)
-				.take(capacity)
-		);
-		
 		Self {
-			buffer,
+			buffer: vec![0; capacity],
 			reader,
 			filled_buffer_start: 0,
 			filled_buffer_length: 0,
@@ -205,10 +199,7 @@ impl<R: Read> DynReadBuffer<R> {
 			return;
 		}
 		
-		self.buffer.extend(
-			iter::repeat(0)
-				.take(amount)
-		);
+		self.buffer.resize(self.filled_buffer_end() + amount, 0);
 	}
 	
 	fn filled_buffer_end(&self) -> usize {
