@@ -7,10 +7,10 @@ pub mod utils;
 
 #[test]
 fn read_all() {
-	let mut buffer = DynReadBuffer::new();
-	let mut reader = [1, 2, 3, 4, 0].as_slice();
+	let reader = [1, 2, 3, 4, 0].as_slice();
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 3, 4, 0]
@@ -19,34 +19,34 @@ fn read_all() {
 
 #[test]
 fn unexpected_eof() {
-	let mut buffer = DynReadBuffer::new();
-	let mut reader = [1, 2, 3].as_slice();
+	let reader = [1, 2, 3].as_slice();
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let error = buffer.read_until(&mut reader, 0).unwrap_err();
+	let error = buffer.read_until(0).unwrap_err();
 	assert_eq!(error.kind(), ErrorKind::UnexpectedEof);
 	
-	let result = buffer.read_until(&mut reader, 3).unwrap();
+	let result = buffer.read_until(3).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 3]
 	);
 	
-	let error = buffer.read_until(&mut reader, 3).unwrap_err();
+	let error = buffer.read_until(3).unwrap_err();
 	assert_eq!(error.kind(), ErrorKind::UnexpectedEof);
 }
 
 #[test]
 fn data_after_eof() {
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(vec![1, 2, 3]);
+	reader.add_eof();
+	reader.add_chunk(vec![4, 0]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let error = buffer.read_until(&mut reader, 0).unwrap_err();
+	let error = buffer.read_until(0).unwrap_err();
 	assert_eq!(error.kind(), ErrorKind::UnexpectedEof);
 	
-	reader.add_chunk(vec![4, 0]);
-	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 3, 4, 0]
@@ -55,13 +55,13 @@ fn data_after_eof() {
 
 #[test]
 fn read_chunks() {
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(vec![1, 2, 4]);
 	reader.add_chunk(vec![8, 16]);
 	reader.add_chunk(vec![32]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 32).unwrap();
+	let result = buffer.read_until(32).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 4, 8, 16, 32]
@@ -78,12 +78,12 @@ fn generate_sequence(length: usize, start: usize)-> Vec<u8> {
 #[test]
 fn read_reallocating() {
 	let sequence = generate_sequence(250, 0);
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(sequence.clone());
 	reader.add_chunk(vec![0]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(dbg!(result).len(), 251);
 	assert_eq!(result[0..250], sequence);
 	assert_eq!(result[250], 0);
@@ -93,19 +93,19 @@ fn read_reallocating() {
 fn read_multiple_reallocating() {
 	let sequence_a = generate_sequence(250, 0);
 	let sequence_b = generate_sequence(200, 100);
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(sequence_a.clone());
 	reader.add_chunk(vec![0]);
 	reader.add_chunk(sequence_b.clone());
 	reader.add_chunk(vec![0]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(result.len(), 251);
 	assert_eq!(result[0..250], sequence_a);
 	assert_eq!(result[250], 0);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(result.len(), 201);
 	assert_eq!(result[0..200], sequence_b);
 	assert_eq!(result[200], 0);
@@ -122,20 +122,20 @@ fn read_multiple_reallocating_continuous() {
 	data.push(0);
 	data.extend_from_slice(&sequence_c);
 	data.push(0);
-	let mut reader = data.as_slice();
-	let mut buffer = DynReadBuffer::new();
+	let reader = data.as_slice();
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(result.len(), 201);
 	assert_eq!(result[0..200], sequence_a);
 	assert_eq!(result[200], 0);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(result.len(), 51);
 	assert_eq!(result[0..50], sequence_b);
 	assert_eq!(result[50], 0);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(result.len(), 301);
 	assert_eq!(result[0..300], sequence_c);
 	assert_eq!(result[300], 0);
@@ -143,16 +143,16 @@ fn read_multiple_reallocating_continuous() {
 
 #[test]
 fn data_after_error() {
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(vec![3, 26, 12]);
 	reader.add_error(ErrorKind::NotFound.into());
 	reader.add_chunk(vec![3, 31, 22]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let error = buffer.read_until(&mut reader, 22).unwrap_err();
+	let error = buffer.read_until(22).unwrap_err();
 	assert_eq!(error.kind(), ErrorKind::NotFound);
 	
-	let result = buffer.read_until(&mut reader, 22).unwrap();
+	let result = buffer.read_until(22).unwrap();
 	assert_eq!(
 		result,
 		[3, 26, 12, 3, 31, 22]
@@ -161,13 +161,13 @@ fn data_after_error() {
 
 #[test]
 fn continues_after_interrupt() {
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(vec![14, 15, 1]);
 	reader.add_error(ErrorKind::Interrupted.into());
 	reader.add_chunk(vec![12, 15, 0]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(
 		result,
 		[14, 15, 1, 12, 15, 0]
@@ -176,16 +176,16 @@ fn continues_after_interrupt() {
 
 #[test]
 fn read_bytes_after_delimiter() {
-	let mut buffer = DynReadBuffer::new();
-	let mut reader = [1, 2, 3, 4, 0, 5, 6, 7, 8].as_slice();
+	let reader = [1, 2, 3, 4, 0, 5, 6, 7, 8].as_slice();
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 3, 4, 0]
 	);
 	
-	let result = buffer.read_bytes(&mut reader, 4).unwrap();
+	let result = buffer.read_bytes(4).unwrap();
 	assert_eq!(
 		result,
 		[5, 6, 7, 8]
@@ -194,22 +194,22 @@ fn read_bytes_after_delimiter() {
 
 #[test]
 fn read_byte_twice_after_delimiter() {
-	let mut buffer = DynReadBuffer::new();
-	let mut reader = [1, 2, 3, 4, 0, 5, 6, 7, 8].as_slice();
+	let reader = [1, 2, 3, 4, 0, 5, 6, 7, 8].as_slice();
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 3, 4, 0]
 	);
 	
-	let result = buffer.read_bytes(&mut reader, 2).unwrap();
+	let result = buffer.read_bytes(2).unwrap();
 	assert_eq!(
 		result,
 		[5, 6]
 	);
 	
-	let result = buffer.read_bytes(&mut reader, 2).unwrap();
+	let result = buffer.read_bytes(2).unwrap();
 	assert_eq!(
 		result,
 		[7, 8]
@@ -218,18 +218,18 @@ fn read_byte_twice_after_delimiter() {
 
 #[test]
 fn read_chunked_bytes_after_delimiter() {
-	let mut buffer = DynReadBuffer::new();
 	let mut reader = ChunkedReader::new();
 	reader.add_chunk(vec![1, 2, 3, 0, 4, 5]);
 	reader.add_chunk(vec![6, 7, 8, 9, 10]);
+	let mut buffer = DynReadBuffer::new(reader);
 	
-	let result = buffer.read_until(&mut reader, 0).unwrap();
+	let result = buffer.read_until(0).unwrap();
 	assert_eq!(
 		result,
 		[1, 2, 3, 0]
 	);
 	
-	let result = buffer.read_bytes(&mut reader, 7).unwrap();
+	let result = buffer.read_bytes(7).unwrap();
 	assert_eq!(
 		result,
 		[4, 5, 6, 7, 8, 9, 10]

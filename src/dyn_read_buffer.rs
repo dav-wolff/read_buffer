@@ -13,24 +13,27 @@ use std::{iter, io::{Read, self, ErrorKind}};
 /// [`read_bytes`]: DynReadBuffer::read_bytes
 /// [`read_until`]: DynReadBuffer::read_until
 /// [`ReadBuffer`]: crate::ReadBuffer
-pub struct DynReadBuffer {
+pub struct DynReadBuffer<R: Read> {
 	buffer: Vec<u8>,
+	reader: R,
 	filled_buffer_start: usize,
 	filled_buffer_length: usize,
 }
 
-impl DynReadBuffer {
-	/// Creates a new **DynReadBuffer**.
-	pub fn new() -> Self {
+impl<R: Read> DynReadBuffer<R> {
+	/// Creates a new **DynReadBuffer** to read from the given [Read].
+	pub fn new(reader: R) -> Self {
 		Self {
 			buffer: Vec::new(),
+			reader,
 			filled_buffer_start: 0,
 			filled_buffer_length: 0,
 		}
 	}
 	
-	/// Creates a new **DynReadBuffer** with an internal buffer of at least the specified capacity.
-	pub fn with_capacity(capacity: usize) -> Self {
+	/// Creates a new **DynReadBuffer** to read from the given [Read]
+	/// with an internal buffer of at least the specified capacity.
+	pub fn with_capacity(reader: R, capacity: usize) -> Self {
 		let mut buffer = Vec::with_capacity(capacity);
 		buffer.extend(
 			iter::repeat(0)
@@ -39,6 +42,7 @@ impl DynReadBuffer {
 		
 		Self {
 			buffer,
+			reader,
 			filled_buffer_start: 0,
 			filled_buffer_length: 0,
 		}
@@ -67,9 +71,9 @@ impl DynReadBuffer {
 	/// use read_buffer::DynReadBuffer;
 	/// 
 	/// let mut reader = [1, 2, 3, 4].as_slice(); // Read is implemented for &[u8]
-	/// let mut buffer = DynReadBuffer::new();
+	/// let mut buffer = DynReadBuffer::new(reader);
 	/// 
-	/// let read_data = buffer.read_bytes(&mut reader, 3)?;
+	/// let read_data = buffer.read_bytes(3)?;
 	/// 
 	/// assert_eq!(read_data, [1, 2, 3]);
 	/// # Ok(())
@@ -78,7 +82,7 @@ impl DynReadBuffer {
 	/// 
 	/// [`UnexpectedEof`]: std::io::ErrorKind::UnexpectedEof
 	/// [`Interrupted`]: std::io::ErrorKind::Interrupted
-	pub fn read_bytes(&mut self, mut reader: impl Read, amount: usize) -> Result<&[u8], io::Error> {
+	pub fn read_bytes(&mut self, amount: usize) -> Result<&[u8], io::Error> {
 		if amount > self.filled_buffer_length {
 			let amount_to_fill = amount - self.filled_buffer_length;
 			self.reserve(amount_to_fill);
@@ -86,7 +90,7 @@ impl DynReadBuffer {
 			let start = self.filled_buffer_end();
 			let end = start + amount_to_fill;
 			let buffer_to_fill = &mut self.buffer[start..end];
-			reader.read_exact(buffer_to_fill)?;
+			self.reader.read_exact(buffer_to_fill)?;
 			
 			self.filled_buffer_length += amount_to_fill;
 		}
@@ -125,19 +129,19 @@ impl DynReadBuffer {
 	/// use read_buffer::DynReadBuffer;
 	/// 
 	/// let mut reader = [1, 2, 3, 0, 4].as_slice();
-	/// let mut buffer = DynReadBuffer::new();
+	/// let mut buffer = DynReadBuffer::new(reader);
 	/// 
-	/// let read_data = buffer.read_until(&mut reader, 0)?;
+	/// let read_data = buffer.read_until(0)?;
 	/// 
 	/// assert_eq!(read_data, [1, 2, 3, 0]);
-	/// assert_eq!(buffer.read_bytes(&mut reader, 1)?, [4]);
+	/// assert_eq!(buffer.read_bytes(1)?, [4]);
 	/// # Ok(())
 	/// # }
 	/// ```
 	/// 
 	/// [`UnexpectedEof`]: std::io::ErrorKind::UnexpectedEof
 	/// [`Interrupted`]: std::io::ErrorKind::Interrupted
-	pub fn read_until(&mut self, mut reader: impl Read, delimiter: u8) -> Result<&[u8], io::Error> {
+	pub fn read_until(&mut self, delimiter: u8) -> Result<&[u8], io::Error> {
 		if self.filled_buffer_length > 0 {
 			let filled_buffer = &self.buffer[
 				self.filled_buffer_start..self.filled_buffer_end()
@@ -160,7 +164,7 @@ impl DynReadBuffer {
 			
 			let filled_buffer_end = self.filled_buffer_end();
 			let available_buffer = &mut self.buffer[filled_buffer_end..];
-			let amount_read = match reader.read(available_buffer) {
+			let amount_read = match self.reader.read(available_buffer) {
 				Ok(n) => n,
 				Err(err) if err.kind() == ErrorKind::Interrupted => continue,
 				Err(err) => return Err(err),
@@ -209,11 +213,5 @@ impl DynReadBuffer {
 	
 	fn filled_buffer_end(&self) -> usize {
 		self.filled_buffer_start + self.filled_buffer_length
-	}
-}
-
-impl Default for DynReadBuffer {
-	fn default() -> Self {
-		Self::new()
 	}
 }
