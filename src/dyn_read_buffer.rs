@@ -34,14 +34,8 @@ impl<R: Read> DynReadBuffer<R> {
 	/// Creates a new **DynReadBuffer** to read from the given [Read]
 	/// with an internal buffer of at least the specified capacity.
 	pub fn with_capacity(reader: R, capacity: usize) -> Self {
-		let mut buffer = Vec::with_capacity(capacity);
-		buffer.extend(
-			iter::repeat(0)
-				.take(capacity)
-		);
-		
 		Self {
-			buffer,
+			buffer: vec![0; capacity],
 			reader,
 			filled_buffer_start: 0,
 			filled_buffer_length: 0,
@@ -204,6 +198,16 @@ impl<R: Read> DynReadBuffer<R> {
 			self.filled_buffer_start = 0;
 			return;
 		}
+		
+		// TODO this stuff
+		let  = self.buffer.len() - self.filled_buffer_end();
+		let amount_to_extend = amount - (
+		
+		let spare_capacity = self.buffer.capacity() - self.buffer.len();
+		let reserve_amount = amount - spare_capacity;
+		self.buffer.reserve_exact(reserve_amount);
+		
+		self.buffer.resize(self.buffer.len() + amount, )
 		
 		self.buffer.extend(
 			iter::repeat(0)
